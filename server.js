@@ -1,7 +1,6 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const db = require('./db');
 
 const app = express();
@@ -15,16 +14,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 
-// Gunakan Memory Storage agar aman untuk Vercel Serverless
+// Gunakan Memory Storage (Aman untuk Vercel Serverless)
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: { fileSize: 50 * 1024 * 1024 }
 });
 
+// Route Utama (Menampilkan Halaman Frontend)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // ================= API SONGS =================
 
-// Get semua lagu
 app.get('/api/songs', (req, res) => {
   db.all('SELECT * FROM songs ORDER BY id DESC', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -32,7 +35,6 @@ app.get('/api/songs', (req, res) => {
   });
 });
 
-// Upload lagu
 app.post('/api/songs', upload.fields([
   { name: 'audio', maxCount: 1 },
   { name: 'cover', maxCount: 1 }
@@ -47,7 +49,7 @@ app.post('/api/songs', upload.fields([
     const audioFile = req.files.audio[0];
     const coverFile = req.files.cover ? req.files.cover[0] : null;
 
-    const src = '/assets/covers/default.jpg'; 
+    const src = '/assets/covers/default.jpg';
     const cover = coverFile 
       ? '/assets/covers/default.jpg' 
       : '/assets/covers/default.jpg';
@@ -71,7 +73,6 @@ app.post('/api/songs', upload.fields([
   }
 });
 
-// Hapus lagu
 app.delete('/api/songs/:id', (req, res) => {
   const songId = req.params.id;
   db.run('DELETE FROM songs WHERE id = ?', [songId], (err) => {
@@ -82,7 +83,6 @@ app.delete('/api/songs/:id', (req, res) => {
 
 // ================= API PLAYLIST =================
 
-// Buat playlist baru
 app.post('/api/playlists', (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'Nama playlist wajib diisi' });
@@ -93,7 +93,6 @@ app.post('/api/playlists', (req, res) => {
   });
 });
 
-// Ambil semua playlist
 app.get('/api/playlists', (req, res) => {
   db.all('SELECT * FROM playlists ORDER BY id DESC', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -101,7 +100,6 @@ app.get('/api/playlists', (req, res) => {
   });
 });
 
-// Tambah lagu ke playlist
 app.post('/api/playlists/:id/songs', (req, res) => {
   const playlistId = req.params.id;
   const { songId } = req.body;
@@ -118,7 +116,6 @@ app.post('/api/playlists/:id/songs', (req, res) => {
   );
 });
 
-// Ambil lagu dalam playlist tertentu
 app.get('/api/playlists/:id/songs', (req, res) => {
   const playlistId = req.params.id;
   const sql = `
@@ -133,7 +130,6 @@ app.get('/api/playlists/:id/songs', (req, res) => {
   });
 });
 
-// Hapus playlist
 app.delete('/api/playlists/:id', (req, res) => {
   const playlistId = req.params.id;
   db.run('DELETE FROM playlists WHERE id = ?', [playlistId], (err) => {
@@ -142,11 +138,8 @@ app.delete('/api/playlists/:id', (req, res) => {
   });
 });
 
-// Jalankan app.listen hanya jika bukan di Vercel (Production)
 if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Server berjalan di http://localhost:${PORT}`);
-  });
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
 module.exports = app;
