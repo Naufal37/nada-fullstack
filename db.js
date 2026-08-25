@@ -1,4 +1,4 @@
-// Mock Database aman untuk Vercel Serverless tanpa dependensi C++ / sqlite3
+// Mock Database aman untuk Vercel Serverless
 let songs = [];
 let playlists = [];
 let playlistSongs = [];
