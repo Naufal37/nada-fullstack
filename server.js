@@ -11,9 +11,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Folder Statis
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 // Gunakan Memory Storage (Aman untuk Vercel Serverless)
 const storage = multer.memoryStorage();
 const upload = multer({
