@@ -15,36 +15,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 
-// Memastikan folder upload ada
-const uploadDirs = [
-  path.join(__dirname, 'uploads/music'),
-  path.join(__dirname, 'uploads/covers')
-];
-
-uploadDirs.forEach((dir) => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
-
-// Konfigurasi Multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    if (file.fieldname === 'audio') {
-      cb(null, path.join(__dirname, 'uploads/music'));
-    } else if (file.fieldname === 'cover') {
-      cb(null, path.join(__dirname, 'uploads/covers'));
-    } else {
-      cb(new Error('Field tidak dikenal'), null);
-    }
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-  }
-});
-
+// Gunakan Memory Storage agar aman untuk Vercel Serverless
+const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: { fileSize: 50 * 1024 * 1024 }
@@ -56,7 +28,7 @@ const upload = multer({
 app.get('/api/songs', (req, res) => {
   db.all('SELECT * FROM songs ORDER BY id DESC', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+    res.json(rows || []);
   });
 });
 
@@ -75,9 +47,9 @@ app.post('/api/songs', upload.fields([
     const audioFile = req.files.audio[0];
     const coverFile = req.files.cover ? req.files.cover[0] : null;
 
-    const src = `/uploads/music/${audioFile.filename}`;
+    const src = '/assets/covers/default.jpg'; 
     const cover = coverFile 
-      ? `/uploads/covers/${coverFile.filename}` 
+      ? '/assets/covers/default.jpg' 
       : '/assets/covers/default.jpg';
 
     const songTitle = title || path.parse(audioFile.originalname).name;
@@ -125,7 +97,7 @@ app.post('/api/playlists', (req, res) => {
 app.get('/api/playlists', (req, res) => {
   db.all('SELECT * FROM playlists ORDER BY id DESC', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+    res.json(rows || []);
   });
 });
 
@@ -157,7 +129,7 @@ app.get('/api/playlists/:id/songs', (req, res) => {
   `;
   db.all(sql, [playlistId], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+    res.json(rows || []);
   });
 });
 
@@ -170,6 +142,11 @@ app.delete('/api/playlists/:id', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server berjalan di http://localhost:${PORT}`);
-});
+// Jalankan app.listen hanya jika bukan di Vercel (Production)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server berjalan di http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
