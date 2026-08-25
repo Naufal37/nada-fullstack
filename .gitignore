@@ -1,0 +1,8 @@
+node_modules/
+data/nada.db
+data/nada.db-wal
+data/nada.db-shm
+uploads/music/*
+uploads/covers/*
+!uploads/music/.gitkeep
+!uploads/covers/.gitkeep
