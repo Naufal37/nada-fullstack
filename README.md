@@ -7,7 +7,7 @@ jadi kamu bisa tambah/hapus lagu langsung lewat form di website — nggak perlu 
 
 ```
 Browser (frontend)  <-- fetch() -->  Express server (server.js)  <-->  SQLite (data/nada.db)
-   public/index.html                      + Multer (upload file)         uploads/music/
+   public/index.html                      +    Multer (upload file)         uploads/music/
    public/style.css                                                       uploads/covers/
    public/script.js
 ```
