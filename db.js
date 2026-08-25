@@ -5,10 +5,16 @@ let playlistSongs = [];
 
 module.exports = {
   all: (sql, params, callback) => {
+    if (typeof params === 'function') {
+      callback = params;
+    }
     if (sql.includes('playlists')) return callback(null, playlists);
     callback(null, songs);
   },
   run: (sql, params, callback) => {
+    if (typeof params === 'function') {
+      callback = params;
+    }
     if (sql.includes('INSERT INTO songs')) {
       const newSong = { id: Date.now(), title: params[0], artist: params[1], src: params[2], cover: params[3] };
       songs.push(newSong);
