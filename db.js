@@ -1,47 +1,24 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+// Mock Database aman untuk Vercel Serverless tanpa dependensi C++ / sqlite3
+let songs = [];
+let playlists = [];
+let playlistSongs = [];
 
-// Gunakan :memory: jika berjalan di Vercel (production), atau file lokal jika di laptop
-const dbPath = process.env.NODE_ENV === 'production' 
-  ? ':memory:' 
-  : path.join(__dirname, 'database.sqlite');
-
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Gagal terhubung ke database:', err.message);
-  } else {
-    console.log('Terhubung ke database SQLite.');
+module.exports = {
+  all: (sql, params, callback) => {
+    if (sql.includes('playlists')) return callback(null, playlists);
+    callback(null, songs);
+  },
+  run: (sql, params, callback) => {
+    if (sql.includes('INSERT INTO songs')) {
+      const newSong = { id: Date.now(), title: params[0], artist: params[1], src: params[2], cover: params[3] };
+      songs.push(newSong);
+      if (callback) callback.call({ lastID: newSong.id }, null);
+    } else if (sql.includes('INSERT INTO playlists')) {
+      const newPlaylist = { id: Date.now(), name: params[0] };
+      playlists.push(newPlaylist);
+      if (callback) callback.call({ lastID: newPlaylist.id }, null);
+    } else {
+      if (callback) callback(null);
+    }
   }
-});
-
-// Inisialisasi tabel jika belum ada
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS songs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      artist TEXT NOT NULL,
-      src TEXT NOT NULL,
-      cover TEXT NOT NULL
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS playlists (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS playlist_songs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      playlist_id INTEGER,
-      song_id INTEGER,
-      FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
-      FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
-    )
-  `);
-});
-
-module.exports = db;
+};
