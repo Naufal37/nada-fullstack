@@ -9,20 +9,20 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Folder Statis
+// Serve static files dari folder public
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-// Gunakan Memory Storage (Aman untuk Vercel Serverless)
+// Storage Multer (Memory Storage)
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: { fileSize: 50 * 1024 * 1024 }
 });
 
-// Route Utama (Menampilkan Halaman Frontend)
+// ================= ROUTE FRONTEND =================
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -137,6 +137,11 @@ app.delete('/api/playlists/:id', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Playlist berhasil dihapus', id: playlistId });
   });
+});
+
+// Fallback jika route lain tidak ditemukan
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 if (process.env.NODE_ENV !== 'production') {
